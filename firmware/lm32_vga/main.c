@@ -9,34 +9,29 @@
 #include <hw/flags.h>
 #include <console.h>
 
-#include "config.h"
 #include "ci.h"
-#include "processor.h"
-#include "encoder.h"
-#include "pattern.h"
+#include "i2c.h"
+#include "ad9984a.h"
 
 int main(void)
 {
 	irq_setmask(0);
 	irq_setie(1);
 	uart_init();
-
-	puts("\nHDMI2USB firmware  http://timvideos.us/");
+    time_init();
+    i2c_init();
+    
+	puts("\nHDMI2USB-vModVGA firmware  http://hdmi2usb.tv/");
 	printf("Revision %08x built "__DATE__" "__TIME__"\n", MSC_GIT_ID);
-
-	ci_prompt();
-	config_init();
-	time_init();
-	#processor_init();
-	#processor_start(config_get(CONFIG_KEY_RESOLUTION));
+    
+    ad9984a_init();
+    ci_prompt();
+    
 	while(1) {
-		#processor_service();
 		ci_service();
-/* XXX FIX DDR conflict between DMA and L2 cache */
-#if 0
-		pattern_service();
-#endif
 	}
 
 	return 0;
 }
+
+

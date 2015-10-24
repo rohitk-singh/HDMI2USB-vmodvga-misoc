@@ -7,6 +7,13 @@ gateware-base:
 firmware-base:
 	cd $(MSCDIR) && $(CMD) build-headers
 
+lm32-firmware:
+	cd $(MSCDIR) && $(CMD) build-headers
+	$(MAKE) -C firmware/lm32_vga all
+
+load-lm32-firmware: lm32-firmware
+	$(FLTERM) --port $(SERIAL) --kernel=firmware/lm32_vga/firmware.bin --kernel-adr=0x20000000 --speed 115200
+
 load-base:
 	@true
 

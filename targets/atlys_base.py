@@ -18,6 +18,9 @@ from liteeth.common import *
 from liteeth.phy.mii import LiteEthPHYMII
 from liteeth.core.mac import LiteEthMAC
 
+from hdl.vga.led_counter import *
+from hdl.i2c import *
+
 
 class _CRG(Module):
     def __init__(self, platform, clk_freq):
@@ -127,6 +130,8 @@ class BaseSoC(SDRAMSoC):
 
     csr_map = {
         "ddrphy":   16,
+        "led": 17,
+        "i2c": 18,
     }
     csr_map.update(SDRAMSoC.csr_map)
 
@@ -164,6 +169,15 @@ class BaseSoC(SDRAMSoC):
             self.register_sdram_phy(self.ddrphy)
 
         self.specials += Keep(self.crg.cd_sys.clk)
+        
+        #self.submodules.led = LEDCounter(cnt_width=32)
+        self.submodules.led = LEDCounterCSR()
+        leds = self.led.leds
+        for i in range(8):
+            self.comb += platform.request("user_led", i).eq(leds[i])
+        
+        self.submodules.i2c = I2C(platform.request("vga", 0))
+        
         platform.add_platform_command("""
 NET "{sys_clk}" TNM_NET = "GRPsys_clk";
 """, sys_clk=self.crg.cd_sys.clk)
@@ -171,8 +185,8 @@ NET "{sys_clk}" TNM_NET = "GRPsys_clk";
 
 class MiniSoC(BaseSoC):
     csr_map = {
-        "ethphy": 17,
-        "ethmac": 18,
+        "ethphy": 19,
+        "ethmac": 20,
     }
     csr_map.update(BaseSoC.csr_map)
 
@@ -206,4 +220,4 @@ TIMESPEC "TSise_sucks4" = FROM "GRPsys_clk" TO "GRPeth_rx_clk" TIG;
      eth_clocks_tx=platform.lookup_request("eth_clocks").tx)
 
 
-default_subtarget = MiniSoC
+default_subtarget = BaseSoC

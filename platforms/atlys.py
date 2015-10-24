@@ -78,14 +78,14 @@ _io = [
     # NET "Led<5>" LOC = "D4";  # Bank = 0, Pin name = IO_L1P_HSWAPEN_0,     Sch name = HSWAP/LD5
     # NET "Led<6>" LOC = "P16"; # Bank = 1, Pin name = IO_L74N_DOUT_BUSY_1,  Sch name = LD6
     # NET "Led<7>" LOC = "N12"; # Bank = 2, Pin name = IO_L13P_M1_2,         Sch name = M1/LD7
-    ("user_led", 0, Pins("U18")),
-    ("user_led", 1, Pins("M14")),
-    ("user_led", 2, Pins("N14")),
-    ("user_led", 3, Pins("L14")),
-    ("user_led", 4, Pins("M13")),
+    ("user_led", 0, Pins("U18"), IOStandard("LVCMOS33")),
+    ("user_led", 1, Pins("M14"), IOStandard("LVCMOS33")),
+    ("user_led", 2, Pins("N14"), IOStandard("LVCMOS33")),
+    ("user_led", 3, Pins("L14"), IOStandard("LVCMOS33")),
+    ("user_led", 4, Pins("M13"), IOStandard("LVCMOS33")),
     ("user_led", 5, Pins("D4"), IOStandard("LVCMOS33")),
-    ("user_led", 6, Pins("P16")),
-    ("user_led", 7, Pins("N12")),
+    ("user_led", 6, Pins("P16"), IOStandard("LVCMOS33")),
+    ("user_led", 7, Pins("N12"), IOStandard("LVCMOS33")),
 
     ## onBoard PUSH BUTTONS - FIXME
     # Mapping "up" to north
@@ -419,6 +419,10 @@ _io = [
         #Subsignal("scl", Pins("C13"), IOStandard("LVCMOS33")),
         #Subsignal("sda", Pins("A13"), IOStandard("LVCMOS33")),
     ),
+    #("i2c", 0,
+        #Subsignal("sda", Pins("T3"), Misc("PULLUP")),
+        #Subsignal("scl", Pins("R3"), Misc("PULLUP")),
+    #),
 
 #        ("fpga_cfg",
 #            Subsignal("din", Pins("T14")),
@@ -433,6 +437,24 @@ _io = [
 #            Subsignal("tdi", Pins("B1")),
 #            Subsignal("tck", Pins("A15")),
 #        ),
+
+    ("vga", 0, 
+        Subsignal("red", Pins("U10 R10 U11 M10 P11 N10 T12 R11 M11 V13")),
+        Subsignal("green", Pins("N8 T8 M8 R8 V10 V11 N9 V12 T11 N11")),
+        Subsignal("blue", Pins("N6 R7 V6 P8 T6 N7 V8 V7 U7 U8")),
+        Subsignal("vsout", Pins("U16")),
+        Subsignal("hsout", Pins("U15")),
+        Subsignal("sogout", Pins("U13")),
+        Subsignal("oe_filed", Pins("V16")),
+        Subsignal("pwrdwn", Pins("V15")),
+        Subsignal("clamp", Pins("T7")),
+        Subsignal("coast", Pins("P7")),
+        Subsignal("datack", Pins("T10")),
+        Subsignal("sda", Pins("U5")),
+        Subsignal("scl", Pins("V5")),
+        IOStandard("LVCMOS33"), Misc("SLEW=FAST")
+    ),
+        
 
 ]
 

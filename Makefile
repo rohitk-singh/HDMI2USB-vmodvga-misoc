@@ -1,8 +1,10 @@
 BOARD ?= atlys
 MSCDIR ?= build/misoc
-PROG ?= impact
+#PROG ?= impact
+PROG ?= adept
 SERIAL ?= /dev/ttyVIZ0
-TARGET ?= hdmi2usb
+#TARGET ?= hdmi2usb
+TARGET ?= base
 FILTER ?= tee
 
 HDMI2USBDIR = ../..
@@ -16,7 +18,7 @@ CMD = $(PYTHON) \
   make.py \
   -X $(HDMI2USBDIR) \
   -t $(BOARD)_$(TARGET) \
-  -Ot firmware_filename $(HDMI2USBDIR)/firmware/lm32/firmware.bin \
+  -Ot firmware_filename $(HDMI2USBDIR)/firmware/lm32_vga/firmware.bin \
   -Op programmer $(PROG) \
   $(MISOC_EXTRA_CMDLINE)
 
@@ -54,6 +56,7 @@ load: load-gateware load-$(TARGET)
 gateware: gateware-$(TARGET)
 	cd $(MSCDIR) && $(CMD) --csr_csv $(HDMI2USBDIR)/test/csr.csv clean
 	cp hdl/encoder/vhdl/header.hex $(MSCDIR)/build/header.hex
+	#echo "$(CMD) --csr_csv $(HDMI2USBDIR)/test/csr.csv build-csr-csv build-bitstream"
 	cd $(MSCDIR) && $(CMD) --csr_csv $(HDMI2USBDIR)/test/csr.csv build-csr-csv build-bitstream \
 	| $(FILTER) $(PWD)/build/output.$(DATE).log; (exit $${PIPESTATUS[0]})
 

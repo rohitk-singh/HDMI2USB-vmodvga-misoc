@@ -20,6 +20,7 @@ from liteeth.core.mac import LiteEthMAC
 
 from hdl.vga.led_counter import *
 from hdl.i2c import *
+from hdl.vga import VGAIn
 
 
 class _CRG(Module):
@@ -132,8 +133,14 @@ class BaseSoC(SDRAMSoC):
         "ddrphy":   16,
         "led": 17,
         "i2c": 18,
+        "vga_in": 19,
     }
     csr_map.update(SDRAMSoC.csr_map)
+
+    interrupt_map = {
+        "vga_in": 2,
+    }
+    interrupt_map.update(SDRAMSoC.interrupt_map)
 
     mem_map = {
         "firmware_ram": 0x20000000,  # (default shadow @0xa0000000)
@@ -176,7 +183,13 @@ class BaseSoC(SDRAMSoC):
         for i in range(8):
             self.comb += platform.request("user_led", i).eq(leds[i])
         
-        self.submodules.i2c = I2C(platform.request("vga", 0))
+        vga_pads = platform.request("vga", 0)
+        self.submodules.vga_in = VGAIn(vga_pads,
+                                       self.sdram.crossbar.get_master(),
+                                       fifo_depth=1024)
+        self.submodules.i2c = I2C(vga_pads)
+
+
         
         platform.add_platform_command("""
 NET "{sys_clk}" TNM_NET = "GRPsys_clk";
@@ -185,13 +198,13 @@ NET "{sys_clk}" TNM_NET = "GRPsys_clk";
 
 class MiniSoC(BaseSoC):
     csr_map = {
-        "ethphy": 19,
-        "ethmac": 20,
+        "ethphy": 20,
+        "ethmac": 21,
     }
     csr_map.update(BaseSoC.csr_map)
 
     interrupt_map = {
-        "ethmac": 2,
+        "ethmac": 3,
     }
     interrupt_map.update(BaseSoC.interrupt_map)
 

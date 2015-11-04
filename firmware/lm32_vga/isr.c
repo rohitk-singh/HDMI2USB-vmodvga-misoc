@@ -2,6 +2,8 @@
 #include <irq.h>
 #include <uart.h>
 
+#include "vga_in.h"
+
 void isr(void);
 void isr(void)
 {
@@ -21,9 +23,10 @@ void isr(void)
 	if(irqs & (1 << UART_INTERRUPT))
 		uart_isr();
 	
-    /*if(irqs & (1 << HDMI_IN0_INTERRUPT))
-		hdmi_in0_isr();
-	if(irqs & (1 << HDMI_IN1_INTERRUPT))
+    if(irqs & (1 << VGA_IN_INTERRUPT))
+		vga_in_isr();
+        
+	/*if(irqs & (1 << HDMI_IN1_INTERRUPT))
 		hdmi_in1_isr();
     */
 }

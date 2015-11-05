@@ -12,6 +12,7 @@
 #include "ci.h"
 #include "i2c.h"
 #include "ad9984a.h"
+#include "vga_in.h"
 
 int main(void)
 {
@@ -26,9 +27,11 @@ int main(void)
     
     ad9984a_init();
     ci_prompt();
-    
+    vga_in_start();
 	while(1) {
 		ci_service();
+        vga_in_service();
+        
 	}
 
 	return 0;

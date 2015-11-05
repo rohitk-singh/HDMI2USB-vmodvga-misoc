@@ -19,10 +19,10 @@ int vga_in_fb_index;
 #define FRAMEBUFFER_COUNT 4
 #define FRAMEBUFFER_MASK (FRAMEBUFFER_COUNT - 1)
 
-#define BYTES_PER_PIXEL 1
+#define BYTES_PER_PIXEL 4
 
 #define VGA_IN_FRAMEBUFFERS_BASE 0x00000000
-#define VGA_IN_FRAMEBUFFERS_SIZE 1024*768*1  //intially was 1280*720*2
+#define VGA_IN_FRAMEBUFFERS_SIZE 1024*768*BYTES_PER_PIXEL  //intially was 1280*720*2
 
 
 unsigned int vga_in_framebuffer_base(char n) {
@@ -69,7 +69,7 @@ void vga_in_isr(void)
     */
     
 
-	expected_length = vga_in_hres*vga_in_vres*2;
+	expected_length = vga_in_hres*vga_in_vres*BYTES_PER_PIXEL;
 	if(vga_in_dma_slot0_status_read() == DVISAMPLER_SLOT_PENDING) {
 		length = vga_in_dma_slot0_address_read() - (vga_in_framebuffer_base(vga_in_fb_slot_indexes[0]) & 0x0fffffff);
 		if(length == expected_length) {
@@ -104,12 +104,14 @@ static int vga_in_locked;
 void vga_in_init_video(int hres, int vres)
 {
 	unsigned int mask;
-
+    
+    printf("\nVGA_in: Initializing...\n");
+    
 	//hdmi_in0_clocking_pll_reset_write(1);  //Unimplemented as of now
 	vga_in_connected = vga_in_locked = 0;
 	vga_in_hres = hres; vga_in_vres = vres;
 
-	vga_in_dma_frame_size_write(hres*vres*1); // Initially it was hres*vres*2, but since we re using only 1024*768 counter, 
+	vga_in_dma_frame_size_write(hres*vres*BYTES_PER_PIXEL); // Initially it was hres*vres*2, but since we re using only 1024*768 counter, 
 	vga_in_fb_slot_indexes[0] = 0;
 	vga_in_dma_slot0_address_write(vga_in_framebuffer_base(0));
 	vga_in_dma_slot0_status_write(DVISAMPLER_SLOT_LOADED);
@@ -135,6 +137,7 @@ void vga_in_disable(void)
 	mask &= ~(1 << VGA_IN_INTERRUPT);
 	irq_setmask(mask);
 
+    vga_in_frame_start_counter_write(0); // stop counter
 	vga_in_dma_slot0_status_write(DVISAMPLER_SLOT_EMPTY);
 	vga_in_dma_slot1_status_write(DVISAMPLER_SLOT_EMPTY);
 	//vga_in_clocking_pll_reset_write(1); Not implemented as of now
@@ -142,6 +145,7 @@ void vga_in_disable(void)
 
 void vga_in_clear_framebuffers(void)
 {
+    printf("\nVGA_in: Clearing FBs...\n");
 	int i;
 	flush_l2_cache();
 	volatile unsigned int *framebuffer = (unsigned int *)(MAIN_RAM_BASE + VGA_IN_FRAMEBUFFERS_BASE);
@@ -150,7 +154,9 @@ void vga_in_clear_framebuffers(void)
      * IMPORTANT: Review this code: "i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/4;"
      * 
      * VERY VERY IMPORTANT
-     * TODO
+     * 
+     * UPDATE: Would work fine for now. Since BYTES_PER_PIXEL=4 ie 32-bits per pixel. 
+     *         Hence, each framebuffer[i] refers to each pixel. Just set it to zeros.
      */
     for(i=0; i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/4; i++) {
 		//framebuffer[i] = 0x80108010; /* black in YCbCr 4:2:2*/
@@ -164,6 +170,39 @@ static void vga_in_check_overflow(void)
 		printf("vga_in: FIFO overflow\n");
 		vga_in_frame_overflow_write(1);
 	}
+}
+
+void vga_in_dump_fb(void)
+{
+    printf("\nDumping vga_in fb data and registers\n");
+    int i;
+    flush_l2_cache();
+    volatile unsigned int *framebuffer = (unsigned int *)(MAIN_RAM_BASE + VGA_IN_FRAMEBUFFERS_BASE);
+    
+    for (i=0; i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/4; i++) {
+        printf("%d ", framebuffer[i]);
+    }  
+    
+    printf("\n\nRegisters:\n");
+    printf("vga_in_dma_frame_size: %d\n", vga_in_dma_frame_size_read());
+    printf("vga_in_frame_start_counter: %d\n", vga_in_frame_start_counter_read());
+    printf("vga_in_frame_overflow: %d\n\n", vga_in_frame_overflow_read());
+}
+
+void vga_in_start(void)
+{
+    printf("\nStarting vga_in...\n");
+    vga_in_disable();
+    vga_in_clear_framebuffers();
+    vga_in_frame_start_counter_write(1); // Start counter
+    vga_in_init_video(1024, 768);
+}
+
+void vga_in_test(void)
+{
+    
+    
+    
 }
 
 void vga_in_service(void)

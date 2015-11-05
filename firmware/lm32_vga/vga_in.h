@@ -10,11 +10,20 @@ void vga_in_isr(void);
 void vga_in_init_video(int hres, int vres);
 void vga_in_disable(void);
 void vga_in_clear_framebuffers(void);
+void vga_in_service(void);
+void vga_in_start(void);
+void vga_in_test(void);
+void vga_in_dump_fb(void);
+
+/* NOT IMPLEMENTED AS OF NOW
+ * 
 void vga_in_print_status(void);
 int vga_in_calibrate_delays(void);
 int vga_in_adjust_phase(void);
 int vga_in_init_phase(void);
 int vga_in_phase_startup(void);
-void vga_in_service(void);
+*/
+
+
 
 #endif /* __VGA_IN_H */

@@ -10,7 +10,7 @@
 #include "ad9984a.h"
 #include "ci.h"
 #include "i2c.h"
-
+#include "vga_in.h"
 
 int status_enabled;
 unsigned char atlys_leds_enable = 1;
@@ -32,6 +32,14 @@ static void help_debug(void)
 {
 	puts("debug ad9984a                  - dump ad9984a register configuration");
 	puts("debug ddr                      - show DDR bandwidth");
+    puts("debug vga_in                   - dump vga_in fb data and registers");
+}
+
+static void help_vga_in(void)
+{
+    puts("clear_fb                       - clear framebuffers of vga_in");
+    puts("disable_vga_in                 - disable vga_in");
+    puts("vga_in_init                    - initialize vga_in");
 }
 
 static void help(void)
@@ -45,6 +53,8 @@ static void help(void)
 	puts("");
     help_i2c_leds();
 	puts("");
+    help_vga_in();
+    puts("");
 	help_debug();
 }
 
@@ -302,12 +312,23 @@ void ci_service(void)
 		else
 			status_print();
 	}
+    else if(strcmp(token, "clear_fb") == 0) {
+        vga_in_clear_framebuffers();
+    }
+    else if(strcmp(token, "disable_vga_in") == 0) {
+        vga_in_disable();
+    }
+    else if(strcmp(token, "vga_in_init") == 0) {
+        vga_in_start();
+    }
 	else if(strcmp(token, "debug") == 0) {
 		token = get_token(&str);
 		if(strcmp(token, "ad9984a") == 0)
 			ad9984a_debug();
 		else if(strcmp(token, "ddr") == 0)
 			debug_ddr();
+        else if(strcmp(token, "vga_in") == 0)
+            vga_in_dump_fb();
 		else
 			help_debug();
 	} else {

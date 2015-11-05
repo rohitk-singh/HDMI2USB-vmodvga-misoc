@@ -4,10 +4,9 @@ from migen.bank.description import *
 from migen.flow.actor import *
 
 
-
 class FrameExtraction(Module, AutoCSR):
     def __init__(self, word_width, fifo_depth):
-        self.counter = Signal(word_width)
+        self.counter = Signal(20)  # Since math.log(1024*768, 2) = 19.58
 
         word_layout = [("sof", 1), ("pixels", word_width)]
         self.frame = Source(word_layout)
@@ -15,6 +14,7 @@ class FrameExtraction(Module, AutoCSR):
         data = Record(word_layout)
 
         self._overflow = CSR()
+        self._start_counter = CSRStorage(1, reset=0)
 
         self.sync += [
             If((self.counter == 0),
@@ -25,16 +25,20 @@ class FrameExtraction(Module, AutoCSR):
         ]
 
         self.sync += [
-            If((self.counter < 768432),
+            If((self._start_counter.storage),
                self.counter.eq(self.counter + 1)
-            ).Else(
-                self.counter.eq(0)
             )
         ]
+#       self._overflow.w.eq(self.counter > (1024*768))
+        self.sync += [
+            self._overflow.w.eq(0)
+        ]
+        
+#       self.frame.stb.eq(1), inside self.comb statement
 
         self.comb += [
             self.busy.eq(0),
             data.pixels.eq(self.counter),
-            self.frame.stb.eq(1),
+            self.frame.stb.eq((self.counter < (1024*768)) & (self._start_counter.storage)),
             self.frame.payload.eq(data)
         ]

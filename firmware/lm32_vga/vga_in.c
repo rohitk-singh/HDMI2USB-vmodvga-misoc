@@ -19,10 +19,10 @@ int vga_in_fb_index;
 #define FRAMEBUFFER_COUNT 4
 #define FRAMEBUFFER_MASK (FRAMEBUFFER_COUNT - 1)
 
-#define BYTES_PER_PIXEL 4
+#define BYTES_PER_PIXEL 2 // should be changed for 32-bits per pixel
 
 #define VGA_IN_FRAMEBUFFERS_BASE 0x00000000
-#define VGA_IN_FRAMEBUFFERS_SIZE 1024*768*BYTES_PER_PIXEL  //intially was 1280*720*2
+#define VGA_IN_FRAMEBUFFERS_SIZE 80*80*BYTES_PER_PIXEL  //intially was 1280*720*2
 
 
 unsigned int vga_in_framebuffer_base(char n) {
@@ -158,7 +158,7 @@ void vga_in_clear_framebuffers(void)
      * UPDATE: Would work fine for now. Since BYTES_PER_PIXEL=4 ie 32-bits per pixel. 
      *         Hence, each framebuffer[i] refers to each pixel. Just set it to zeros.
      */
-    for(i=0; i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/4; i++) {
+    for(i=0; i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/8; i++) { //4
 		//framebuffer[i] = 0x80108010; /* black in YCbCr 4:2:2*/
         framebuffer[i] = 0x00000000; /* black*/
 	}
@@ -176,17 +176,22 @@ void vga_in_dump_fb(void)
 {
     printf("\nDumping vga_in fb data and registers\n");
     int i;
+    unsigned int upper=0, lower=0;
     flush_l2_cache();
     volatile unsigned int *framebuffer = (unsigned int *)(MAIN_RAM_BASE + VGA_IN_FRAMEBUFFERS_BASE);
+    volatile unsigned int temp =0 ;
     
-    for (i=0; i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/4; i++) {
-        printf("%d ", framebuffer[i]);
+    for (i=0; i<(VGA_IN_FRAMEBUFFERS_SIZE*FRAMEBUFFER_COUNT)/4; i++) { //4 initially
+        lower = framebuffer[i] >> 16;
+        upper = framebuffer[i] & 0x0000ffff;
+        printf("%u %u ", lower, upper);
     }  
     
     printf("\n\nRegisters:\n");
     printf("vga_in_dma_frame_size: %d\n", vga_in_dma_frame_size_read());
     printf("vga_in_frame_start_counter: %d\n", vga_in_frame_start_counter_read());
-    printf("vga_in_frame_overflow: %d\n\n", vga_in_frame_overflow_read());
+    printf("vga_in_frame_overflow: %d\n", vga_in_frame_overflow_read());
+    printf("Sizeof unsigned int: %d\n\n", sizeof(unsigned int));
 }
 
 void vga_in_start(void)
@@ -195,7 +200,7 @@ void vga_in_start(void)
     vga_in_disable();
     vga_in_clear_framebuffers();
     vga_in_frame_start_counter_write(1); // Start counter
-    vga_in_init_video(1024, 768);
+    vga_in_init_video(80, 80);
 }
 
 void vga_in_test(void)

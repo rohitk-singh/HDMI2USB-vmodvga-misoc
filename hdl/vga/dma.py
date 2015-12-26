@@ -67,6 +67,10 @@ class DMA(Module):
         bus_dw = lasmim.dw
         alignment_bits = bits_for(bus_dw//8) - 1
 
+        # debug
+        print("LASMI Bus Address Width : {}".format(bus_aw))
+        print("LASMI Bus Data Width    : {}".format(bus_dw))
+        
         fifo_word_width = bus_dw
         self.frame = Sink([("sof", 1), ("pixels", fifo_word_width)])
         self._frame_size = CSRStorage(bus_aw + alignment_bits, alignment_bits=alignment_bits)
@@ -88,7 +92,7 @@ class DMA(Module):
         self.sync += [
             If(reset_words,
                 current_address.eq(self._slot_array.address),
-                mwords_remaining.eq(self._frame_size.storage)
+                mwords_remaining.eq(self._frame_size.storage) #Initially there was no division by 4
             ).Elif(count_word,
                 current_address.eq(current_address + 1),
                 mwords_remaining.eq(mwords_remaining - 1)
@@ -97,7 +101,7 @@ class DMA(Module):
 
         memory_word = Signal(bus_dw)
         pixbits = []
-        for i in range(bus_dw//16):
+        for i in range(bus_dw//16): #was initially 16
             pixbits.append(self.frame.pixels)
         self.comb += memory_word.eq(Cat(*pixbits))
 

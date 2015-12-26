@@ -13,6 +13,8 @@ class VGAIn(Module, AutoCSR):
         self.submodules.dma = DMA(lasmim, n_dma_slots)
         self.comb += self.frame.frame.connect(self.dma.frame)
         self.ev = self.dma.ev
+        print("LASMI Bus Address Width : {}".format(lasmim.aw))
+        print("LASMI Bus Data Width    : {}".format(lasmim.dw))
 
     autocsr_exclude = {"ev"}
 

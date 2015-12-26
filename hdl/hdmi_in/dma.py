@@ -127,6 +127,7 @@ class DMA(Module):
                 )
             )
         )
+
         fsm.act("EOF",
             If(~self._bus_accessor.busy,
                 self._slot_array.address_done.eq(1),

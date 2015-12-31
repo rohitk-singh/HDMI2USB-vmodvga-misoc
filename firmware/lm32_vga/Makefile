@@ -2,7 +2,7 @@
 MSCDIR=../../build/misoc
 include $(MSCDIR)/software/common.mak
 
-OBJECTS= ad9984a.o ci.o isr.o i2c.o vga_in.o main.o 
+OBJECTS= ad9984a.o ci.o config.o edid.o isr.o i2c.o processor.o pattern.o pll.o vga_in.o main.o 
 
 all: firmware.bin
 

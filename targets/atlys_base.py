@@ -21,6 +21,7 @@ from liteeth.core.mac import LiteEthMAC
 from hdl.vga.led_counter import *
 from hdl.i2c import *
 from hdl.vga import VGAIn
+from hdl.hdmi_out import HDMIOut
 
 
 class _CRG(Module):
@@ -134,6 +135,7 @@ class BaseSoC(SDRAMSoC):
         "led": 17,
         "i2c": 18,
         "vga_in": 19,
+        "hdmi_out0": 20,
     }
     csr_map.update(SDRAMSoC.csr_map)
 
@@ -189,7 +191,17 @@ class BaseSoC(SDRAMSoC):
                                        fifo_depth=1024)
         self.submodules.i2c = I2C(vga_pads)
 
-
+        self.submodules.hdmi_out0 = HDMIOut(platform.request("hdmi_out", 0),
+                                            self.sdram.crossbar.get_master())
+        platform.add_platform_command("""PIN "hdmi_out_pix_bufg.O" CLOCK_DEDICATED_ROUTE = FALSE;""")
+        platform.add_platform_command("""
+NET "{pix0_clk}" TNM_NET = "GRPpix0_clk";
+TIMESPEC "TSise_sucks7" = FROM "GRPpix0_clk" TO "GRPsys_clk" TIG;
+TIMESPEC "TSise_sucks8" = FROM "GRPsys_clk" TO "GRPpix0_clk" TIG;
+TIMESPEC "TSise_sucks9" = FROM "GRPpix1_clk" TO "GRPsys_clk" TIG;
+TIMESPEC "TSise_sucks10" = FROM "GRPsys_clk" TO "GRPpix1_clk" TIG;
+""", pix0_clk=self.hdmi_out0.driver.clocking.cd_pix.clk,
+)
         
         platform.add_platform_command("""
 NET "{sys_clk}" TNM_NET = "GRPsys_clk";

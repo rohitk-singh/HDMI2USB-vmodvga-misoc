@@ -22,7 +22,7 @@ int vga_in_fb_index;
 #define BYTES_PER_PIXEL 2 // should be changed for 32-bits per pixel
 
 #define VGA_IN_FRAMEBUFFERS_BASE 0x00000000
-#define VGA_IN_FRAMEBUFFERS_SIZE 80*80*BYTES_PER_PIXEL  //intially was 1280*720*2
+#define VGA_IN_FRAMEBUFFERS_SIZE 1024*768*BYTES_PER_PIXEL  //intially was 1280*720*2
 
 
 unsigned int vga_in_framebuffer_base(char n) {
@@ -200,7 +200,7 @@ void vga_in_start(void)
     vga_in_disable();
     vga_in_clear_framebuffers();
     vga_in_frame_start_counter_write(1); // Start counter
-    vga_in_init_video(80, 80);
+    vga_in_init_video(1024, 768);
 }
 
 void vga_in_test(void)

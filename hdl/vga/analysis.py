@@ -5,9 +5,20 @@ from migen.genlib.record import Record
 from migen.bank.description import *
 from migen.flow.actor import *
 
+from hdl.csc.rgb2ycbcr import RGB2YCbCr
+from hdl.csc.ycbcr444to422 import YCbCr444to422
+
 
 class FrameExtraction(Module, AutoCSR):
     def __init__(self, word_width, fifo_depth):
+        # in pix clock domain
+        self.valid_i = Signal()
+        self.vsync = Signal()
+        self.de = Signal()
+        self.r = Signal(8)
+        self.g = Signal(8)
+        self.b = Signal(8)
+
         self.counter = Signal(20)  # Since math.log(1024*768, 2) = 19.58
 
         word_layout = [("sof", 1), ("pixels", word_width)]
@@ -23,17 +34,50 @@ class FrameExtraction(Module, AutoCSR):
             )
         ]
 
+        de_r = Signal()
+        self.sync.pix += de_r.eq(self.de)
+
+        rgb2ycbcr = RGB2YCbCr()
+        self.submodules += RenameClockDomains(rgb2ycbcr, "pix")
+        chroma_downsampler = YCbCr444to422()
+        self.submodules += RenameClockDomains(chroma_downsampler, "pix")
+        self.comb += [
+            rgb2ycbcr.sink.stb.eq(self.valid_i),
+            rgb2ycbcr.sink.sop.eq(self.de & ~de_r),
+            rgb2ycbcr.sink.r.eq(self.r),
+            rgb2ycbcr.sink.g.eq(self.g),
+            rgb2ycbcr.sink.b.eq(self.b),
+            Record.connect(rgb2ycbcr.source, chroma_downsampler.sink),
+            chroma_downsampler.source.ack.eq(1)
+        ]
+        # XXX need clean up
+        de = self.de
+        vsync = self.vsync
+        for i in range(rgb2ycbcr.latency + chroma_downsampler.latency):
+            next_de = Signal()
+            next_vsync = Signal()
+            self.sync.pix += [
+                next_de.eq(de),
+                next_vsync.eq(vsync)
+            ]
+            de = next_de
+            vsync = next_vsync
+
         ###################################################################################
         # start of frame detection
 
+        '''new_frame = Signal()
+        self.comb += new_frame.eq(self.counter == 0)'''
+        vsync_r = Signal()
         new_frame = Signal()
-        self.comb += new_frame.eq(self.counter == 0)
+        self.comb += new_frame.eq(vsync & ~vsync_r)
+        self.sync.pix += vsync_r.eq(vsync)
 
         # pack pixels into words
         cur_word = Signal(word_width)
         cur_word_valid = Signal()
         encoded_pixel = Signal(16)
-        self.comb += encoded_pixel.eq(self.counter[0:16]),
+        self.comb += encoded_pixel.eq(Cat(chroma_downsampler.source.y, chroma_downsampler.source.cb_cr)),
         pack_factor = word_width//16
         assert(pack_factor & (pack_factor - 1) == 0)  # only support powers of 2
         pack_counter = Signal(max=pack_factor)
@@ -44,7 +88,7 @@ class FrameExtraction(Module, AutoCSR):
             If(new_frame,
                 cur_word_valid.eq(pack_counter == (pack_factor - 1)),
                 pack_counter.eq(0),
-            ).Elif((self.counter < (80*80)) & (self._start_counter.storage),
+            ).Elif(chroma_downsampler.source.stb & de,
                 [If(pack_counter == (pack_factor-i-1),
                     cur_word[16*i:16*(i+1)].eq(encoded_pixel)) for i in range(pack_factor)],
                 cur_word_valid.eq(pack_counter == (pack_factor - 1)),

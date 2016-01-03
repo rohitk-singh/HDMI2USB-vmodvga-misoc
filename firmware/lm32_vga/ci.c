@@ -11,6 +11,9 @@
 #include "ci.h"
 #include "i2c.h"
 #include "vga_in.h"
+#include "processor.h"
+#include "pll.h"
+#include "config.h"
 
 int status_enabled;
 unsigned char atlys_leds_enable = 1;
@@ -27,7 +30,11 @@ static void help_i2c_leds(void)
 	puts("i2c_leds on                    - enable pcf8574a leds");
 	puts("i2c_leds off                   - disable pcf8574a leds");
 }
-
+static void help_vga_switch(void)
+{
+	puts("vga_swtich on                  - display vga output on HDMI_OUT0");
+	puts("vga_switch off                 - display back the pattern");
+}
 static void help_debug(void)
 {
 	puts("debug ad9984a                  - dump ad9984a register configuration");
@@ -53,6 +60,8 @@ static void help(void)
 	puts("");
     help_i2c_leds();
 	puts("");
+    help_vga_switch();
+    puts("");
     help_vga_in();
     puts("");
 	help_debug();
@@ -168,8 +177,18 @@ static void i2c_leds_off(void)
 	printf("Disabling pcf8574a i2c leds\n");
 	i2c_leds_enable = 0;
 }
-
-
+static void vga_switch_on(void)
+{
+    printf("Switching on VGA output on HDMI_OUT0...\n");
+    processor_set_hdmi_out0_source(VIDEO_IN_HDMI_IN0);
+    processor_update();
+}
+static void vga_switch_off(void)
+{
+    printf("Switching off VGA output and reverting to pattern o/p on HDMI_OUT0...\n");
+    processor_set_hdmi_out0_source(VIDEO_IN_PATTERN);
+    processor_update();
+}
 static unsigned int log2(unsigned int v)
 {
 	unsigned int r = 0;
@@ -302,7 +321,15 @@ void ci_service(void)
 		else
 			help_i2c_leds();
 	}
-
+    else if(strcmp(token, "vga_switch") == 0) {
+		token = get_token(&str);
+		if(strcmp(token, "on") == 0)
+			vga_switch_on();
+		else if(strcmp(token, "off") == 0)
+			vga_switch_off();
+		else
+			help_vga_switch();
+	}
 	else if(strcmp(token, "status") == 0) {
 		token = get_token(&str);
 		if(strcmp(token, "on") == 0)

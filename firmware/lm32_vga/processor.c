@@ -7,6 +7,7 @@
 #include <hw/flags.h>
 #include <time.h>
 
+#include "vga_in.h"
 #include "edid.h"
 #include "pattern.h"
 #include "pll.h"
@@ -397,6 +398,8 @@ void processor_update(void)
 {
     if(processor_hdmi_out0_source == VIDEO_IN_PATTERN)
 		hdmi_out0_fi_base0_write(pattern_framebuffer_base());
+    else if(processor_hdmi_out0_source == VIDEO_IN_HDMI_IN0)
+		hdmi_out0_fi_base0_write(vga_in_framebuffer_base(vga_in_fb_index));
 
     /*if(processor_hdmi_out1_source == VIDEO_IN_PATTERN)
 		hdmi_out1_fi_base0_write(pattern_framebuffer_base()); */

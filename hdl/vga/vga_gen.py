@@ -3,15 +3,15 @@ from migen.bank.description import *
 from migen.sim.generic import run_simulation
 from migen.fhdl import verilog
 
-v_active = 1024
-v_sync_start = 1048
-v_sync_end = 1184
-vMax = 1344
+h_active = 1024
+h_sync_start = 1048
+h_sync_end = 1184
+hMax = 1344
 
-h_active = 768
-h_sync_start = 771
-h_sync_end = 777
-hMax = 806
+v_active = 768
+v_sync_start = 771
+v_sync_end = 777
+vMax = 806
 
 class VGAGenerator(Module):
     def __init__(self, cnt_width=24):

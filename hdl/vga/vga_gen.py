@@ -50,7 +50,7 @@ class VGAGenerator(Module):
                 self.vsync.eq(1),
             ).Elif(self.counterY == v_sync_end,
                 self.vsync.eq(0),
-            ).Elif(self.counterY == vMax - 1,
+            ).Elif(self.counterY == vMax ,
                 self.counterY.eq(0),
                 data.eq(0),
             ),

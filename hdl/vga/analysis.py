@@ -35,12 +35,12 @@ class FrameExtraction(Module, AutoCSR):
         ]
 
         de_r = Signal()
-        self.sync.pix += de_r.eq(self.de)
+        self.sync.sys += de_r.eq(self.de) #initially self.sync.pix
 
         rgb2ycbcr = RGB2YCbCr()
-        self.submodules += RenameClockDomains(rgb2ycbcr, "pix")
+        self.submodules += RenameClockDomains(rgb2ycbcr, "sys") #initially pix
         chroma_downsampler = YCbCr444to422()
-        self.submodules += RenameClockDomains(chroma_downsampler, "pix")
+        self.submodules += RenameClockDomains(chroma_downsampler, "sys") #initially pix
         self.comb += [
             rgb2ycbcr.sink.stb.eq(self.valid_i),
             rgb2ycbcr.sink.sop.eq(self.de & ~de_r),
@@ -56,7 +56,8 @@ class FrameExtraction(Module, AutoCSR):
         for i in range(rgb2ycbcr.latency + chroma_downsampler.latency):
             next_de = Signal()
             next_vsync = Signal()
-            self.sync.pix += [
+            # Beware below...initially was self.sync.pix
+            self.sync.sys += [
                 next_de.eq(de),
                 next_vsync.eq(vsync)
             ]
@@ -71,7 +72,8 @@ class FrameExtraction(Module, AutoCSR):
         vsync_r = Signal()
         new_frame = Signal()
         self.comb += new_frame.eq(vsync & ~vsync_r)
-        self.sync.pix += vsync_r.eq(vsync)
+        #self.sync.pix += vsync_r.eq(vsync)
+        self.sync.sys += vsync_r.eq(vsync)
 
         # pack pixels into words
         cur_word = Signal(word_width)

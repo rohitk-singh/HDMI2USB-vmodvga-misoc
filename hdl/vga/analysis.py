@@ -99,7 +99,8 @@ class FrameExtraction(Module, AutoCSR):
         ]
 
         # FIFO
-        fifo = RenameClockDomains(SyncFIFO(word_layout, fifo_depth),
+        #Async for another clock domain, sync for our sys clock domain! Fuck!! :(
+        fifo = RenameClockDomains(AsyncFIFO(word_layout, fifo_depth),
             {"write": "pix", "read": "sys"})
         self.submodules += fifo
         self.comb += [

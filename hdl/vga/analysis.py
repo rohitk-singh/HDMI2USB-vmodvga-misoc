@@ -35,12 +35,12 @@ class FrameExtraction(Module, AutoCSR):
         ]
 
         de_r = Signal()
-        self.sync.sys += de_r.eq(self.de) #initially self.sync.pix
+        self.sync.pix += de_r.eq(self.de) #initially self.sync.pix
 
         rgb2ycbcr = RGB2YCbCr()
-        self.submodules += RenameClockDomains(rgb2ycbcr, "sys") #initially pix
+        self.submodules += RenameClockDomains(rgb2ycbcr, "pix") #initially pix
         chroma_downsampler = YCbCr444to422()
-        self.submodules += RenameClockDomains(chroma_downsampler, "sys") #initially pix
+        self.submodules += RenameClockDomains(chroma_downsampler, "pix") #initially pix
         self.comb += [
             rgb2ycbcr.sink.stb.eq(self.valid_i),
             rgb2ycbcr.sink.sop.eq(self.de & ~de_r),
@@ -57,7 +57,7 @@ class FrameExtraction(Module, AutoCSR):
             next_de = Signal()
             next_vsync = Signal()
             # Beware below...initially was self.sync.pix
-            self.sync.sys += [
+            self.sync.pix += [
                 next_de.eq(de),
                 next_vsync.eq(vsync)
             ]
@@ -73,7 +73,7 @@ class FrameExtraction(Module, AutoCSR):
         new_frame = Signal()
         self.comb += new_frame.eq(vsync & ~vsync_r)
         #self.sync.pix += vsync_r.eq(vsync)
-        self.sync.sys += vsync_r.eq(vsync)
+        self.sync.pix += vsync_r.eq(vsync)
 
         # pack pixels into words
         cur_word = Signal(word_width)
@@ -85,7 +85,7 @@ class FrameExtraction(Module, AutoCSR):
         pack_counter = Signal(max=pack_factor)
         
         #self.sync.pix += [
-        self.sync.sys += [
+        self.sync.pix += [
             cur_word_valid.eq(0),
             If(new_frame,
                 cur_word_valid.eq(pack_counter == (pack_factor - 1)),
@@ -100,14 +100,14 @@ class FrameExtraction(Module, AutoCSR):
 
         # FIFO
         fifo = RenameClockDomains(SyncFIFO(word_layout, fifo_depth),
-            {"write": "sys", "read": "sys"})
+            {"write": "pix", "read": "sys"})
         self.submodules += fifo
         self.comb += [
             fifo.din.pixels.eq(cur_word),
             fifo.we.eq(cur_word_valid)
         ]
         
-        self.sync.sys += \
+        self.sync.pix += \
             If(new_frame,
                 fifo.din.sof.eq(1)
             ).Elif(cur_word_valid,
@@ -124,8 +124,8 @@ class FrameExtraction(Module, AutoCSR):
         # overflow detection
         pix_overflow = Signal()
         pix_overflow_reset = Signal()
-        
-        self.sync.sys += [
+
+        self.sync.pix += [
             If(fifo.we & ~fifo.writable,
                 pix_overflow.eq(1)
             ).Elif(pix_overflow_reset,
